@@ -148,22 +148,35 @@ function saveToURL() {
   if (!code) { showModal('', true); return; }
   var encoded = encodeCode(code);
   if (!encoded) { showModal('', true); return; }
-  var newHash = '#v=1&d=' + currentDevice + '&c=' + encoded;
-  history.replaceState(null, '', newHash);
-  showModal(location.href, false);
+  var hash = '#v=1&d=' + currentDevice + '&c=' + encoded;
+  var origin = location.hostname;
+  var isLocal = (origin === '' || origin === 'localhost' || origin.indexOf('claudeusercontent') !== -1 || location.protocol === 'blob:');
+  if (isLocal) {
+    showModal(hash, false, true);
+  } else {
+    var base = location.href.split('#')[0];
+    showModal(base + hash, false, false);
+  }
 }
 
-function showModal(url, empty) {
+function showModal(url, empty, hashOnly) {
   document.getElementById('modal-overlay').style.display = 'flex';
   var inp = document.getElementById('modal-url');
+  var hint = document.getElementById('modal-hint');
+  var btn = document.getElementById('modal-copy-btn');
   if (empty) {
     inp.value = '';
-    document.getElementById('modal-hint').textContent = 'Paste your HTML email first, then click Save & Copy Link.';
-    document.getElementById('modal-copy-btn').style.display = 'none';
+    hint.textContent = 'Paste your HTML email first, then click Save & Copy Link.';
+    btn.style.display = 'none';
+  } else if (hashOnly) {
+    inp.value = url;
+    hint.innerHTML = 'You\'re previewing locally. Once hosted on GitHub Pages, open your GitHub URL and click "Save & Copy Link" there — it will produce the full embeddable link.<br><br>Your encoded hash (for reference):';
+    btn.style.display = 'none';
+    setTimeout(function() { inp.select(); inp.setSelectionRange(0, 99999); }, 60);
   } else {
     inp.value = url;
-    document.getElementById('modal-hint').textContent = 'Select all and copy this URL, then paste into Notion \u2192 /embed';
-    document.getElementById('modal-copy-btn').style.display = 'inline-flex';
+    hint.textContent = 'Copy this URL and paste into Notion → /embed';
+    btn.style.display = 'inline-flex';
     setTimeout(function() { inp.select(); inp.setSelectionRange(0, 99999); }, 60);
   }
 }
